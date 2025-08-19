@@ -1,18 +1,22 @@
-name: Build Android APK
-on: { workflow_dispatch: {} }   # запуск вручную
+name: Build Android
+
+on:
+  push:
+    branches:
+      - main
+
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
       - uses: subosito/flutter-action@v2
         with:
-          channel: 'stable'
-      - run: flutter --version
-      - run: flutter create .
+          flutter-version: '3.22.0' # или последняя
       - run: flutter pub get
-      - run: flutter build apk --debug
-      - uses: actions/upload-artifact@v4
+      - run: flutter build apk --release
+      - uses: actions/upload-artifact@v3
         with:
-          name: SingingBowlTuner-APK
-          path: build/app/outputs/flutter-apk/app-debug.apk
+          name: app-release
+          path: build/app/outputs/flutter-apk/app-release.apk
