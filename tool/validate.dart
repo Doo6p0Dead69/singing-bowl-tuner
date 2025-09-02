@@ -20,7 +20,7 @@ Future<void> main() async {
 }
 
 /// Validate that frequency-to-note mapping produces expected results within
-/// ±5 cents.
+/// ±0.01 cent.
 bool testNoteMapping() {
   print('Test: frequency to note and cents mapping');
   final baseA4 = 440.0;
@@ -53,26 +53,28 @@ bool testNoteMapping() {
 Future<bool> testPitchDetection() async {
   print('Test: pitch detection accuracy');
   final sampleRate = 48000;
-  final durations = [1.0];
+  final durations = [0.5, 1.0];
   final freqs = [110.0, 220.0, 440.0, 523.25, 660.0, 880.0];
   bool ok = true;
-  for (final f in freqs) {
-    final data = generateSine(f, sampleRate, durations.first);
-    final result = detectPitch(data, sampleRate, 440.0);
-    if (result == null) {
-      print('  FAIL: no detection for $f Hz');
-      ok = false;
-      continue;
-    }
-    final f0 = result.frequency;
-    final cents = result.cents;
-    final freqError = (f0 - f).abs();
-    final centsError = cents.abs();
-    final passed = freqError <= 0.5 && centsError <= 5.0;
-    print('  freq $f Hz -> detected ${f0.toStringAsFixed(2)} Hz, cents ${cents.toStringAsFixed(2)}, error ${freqError.toStringAsFixed(2)} Hz');
-    if (!passed) {
-      print('    FAIL: errors exceed limits');
-      ok = false;
+  for (final d in durations) {
+    for (final f in freqs) {
+      final data = generateSine(f, sampleRate, d);
+      final result = detectPitch(data, sampleRate, 440.0);
+      if (result == null) {
+        print('  FAIL: no detection for $f Hz at ${d}s');
+        ok = false;
+        continue;
+      }
+      final f0 = result.frequency;
+      final cents = result.cents;
+      final freqError = (f0 - f).abs();
+      final centsError = cents.abs();
+      final passed = freqError <= 0.5 && centsError <= 5.0;
+      print('  dur ${d}s freq $f Hz -> detected ${f0.toStringAsFixed(2)} Hz, cents ${cents.toStringAsFixed(2)}, error ${freqError.toStringAsFixed(2)} Hz');
+      if (!passed) {
+        print('    FAIL: errors exceed limits');
+        ok = false;
+      }
     }
   }
   if (ok) print('  OK');
