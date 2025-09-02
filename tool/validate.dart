@@ -20,7 +20,7 @@ Future<void> main() async {
 }
 
 /// Validate that frequency-to-note mapping produces expected results within
-/// ±5 cents.
+/// ±0.01 cent.
 bool testNoteMapping() {
   print('Test: frequency to note and cents mapping');
   final baseA4 = 440.0;
