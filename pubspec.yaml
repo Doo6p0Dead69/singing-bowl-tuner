@@ -1,0 +1,36 @@
+name: singing_bowl_tuner
+description: >-
+  A high‑accuracy real‑time tuner for singing bowls built with Flutter.  It
+  measures the fundamental frequency (f0), maps it to the nearest note in the
+  chromatic scale, reports the deviation in cents, and records measurement
+  history.  The app uses native audio input and custom digital signal
+  processing via Platform Channels to achieve low latency and high accuracy.
+version: 1.0.0
+publish_to: 'none'
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+  flutter: '>=3.10.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  intl: ^0.18.0
+  provider: ^6.0.5
+  shared_preferences: ^2.0.15
+  csv: ^5.0.0
+  path_provider: ^2.1.1
+  share_plus: ^6.3.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  lints: ^2.1.1
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/i18n/en.json
+    - assets/i18n/ru.json
