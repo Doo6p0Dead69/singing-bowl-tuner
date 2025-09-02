@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -110,7 +111,7 @@ class AppState extends ChangeNotifier {
   /// Export data to JSON string.
   String exportJson() {
     final list = measurements.map((m) => m.toJson()).toList();
-    return list.toString();
+    return jsonEncode(list);
   }
 }
 
