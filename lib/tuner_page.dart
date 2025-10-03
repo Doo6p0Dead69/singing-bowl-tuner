@@ -21,6 +21,7 @@ class _TunerPageState extends State<TunerPage> {
   StreamSubscription<PitchResult>? _subscription;
   PitchResult? _current;
   bool _running = false;
+  String? _error;
 
   @override
   void initState() {
@@ -34,6 +35,7 @@ class _TunerPageState extends State<TunerPage> {
   @override
   void dispose() {
     _subscription?.cancel();
+    _subscription = null;
     _detector.stop();
     super.dispose();
   }
@@ -44,11 +46,24 @@ class _TunerPageState extends State<TunerPage> {
     setState(() {
       _running = true;
     });
-    _subscription = _detector.results.listen((res) {
-      setState(() {
-        _current = res;
-      });
-    });
+    _subscription = _detector.results.listen(
+      (res) {
+        setState(() {
+          _current = res;
+          _error = null;
+        });
+      },
+      onError: (Object err) {
+        setState(() {
+          _error = err.toString();
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text(err.toString())));
+        }
+        _stop();
+      },
+    );
     await _detector.start(appState.a4, appState.sampleRate, appState.noiseGate);
   }
 
@@ -56,6 +71,7 @@ class _TunerPageState extends State<TunerPage> {
     if (!_running) return;
     await _detector.stop();
     await _subscription?.cancel();
+    _subscription = null;
     setState(() {
       _running = false;
     });
@@ -76,60 +92,78 @@ class _TunerPageState extends State<TunerPage> {
       appBar: AppBar(title: Text(loc.translate('tuner'))),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 16),
-            Text(
-              note,
-              style: theme.textTheme.displayLarge?.copyWith(
-                fontSize: 96,
-                fontWeight: FontWeight.bold,
+            SizedBox(
+              width: 160,
+              child: _buildOvertonesPanel(res?.overtones ?? []),
+            ),
+            const SizedBox(width: 24),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const SizedBox(height: 24),
+                  Text(
+                    note,
+                    style: theme.textTheme.displayLarge?.copyWith(
+                      fontSize: 96,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    res != null
+                        ? '${res.frequency.toStringAsFixed(2)} Hz'
+                        : '-- Hz',
+                    style: theme.textTheme.headlineMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    res != null
+                        ? '${cents >= 0 ? '+' : ''}${cents.toStringAsFixed(2)} ¢'
+                        : '-- ¢',
+                    style: theme.textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 24),
+                  _buildGauge(cents),
+                  const SizedBox(height: 24),
+                  _buildConfidenceBar(confidence),
+                  if (_error != null) ...[
+                    const SizedBox(height: 16),
+                    Text(
+                      _error!,
+                      style: theme.textTheme.bodyMedium
+                          ?.copyWith(color: theme.colorScheme.error),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                  const Spacer(),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ElevatedButton(
+                        onPressed: _running ? null : _start,
+                        child: Text(loc.translate('start')),
+                      ),
+                      const SizedBox(width: 16),
+                      ElevatedButton(
+                        onPressed: _running ? _stop : null,
+                        child: Text(loc.translate('stop')),
+                      ),
+                      const SizedBox(width: 16),
+                      ElevatedButton(
+                        onPressed: (res != null && _running)
+                            ? () => _saveMeasurement(res!, appState)
+                            : null,
+                        child: Text(loc.translate('save')),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                ],
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              res != null
-                  ? '${res.frequency.toStringAsFixed(2)} Hz'
-                  : '-- Hz',
-              style: theme.textTheme.headlineMedium,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              res != null
-                  ? '${cents >= 0 ? '+' : ''}${cents.toStringAsFixed(2)} ¢'
-                  : '-- ¢',
-              style: theme.textTheme.titleLarge,
-            ),
-            const SizedBox(height: 16),
-            // Cents gauge
-            _buildGauge(cents),
-            const SizedBox(height: 16),
-            // Confidence indicator
-            _buildConfidenceBar(confidence),
-            const SizedBox(height: 16),
-            _buildOvertones(res?.overtones ?? []),
-            const Spacer(),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ElevatedButton(
-                  onPressed: _running ? null : _start,
-                  child: Text(loc.translate('start')),
-                ),
-                const SizedBox(width: 16),
-                ElevatedButton(
-                  onPressed: _running ? _stop : null,
-                  child: Text(loc.translate('stop')),
-                ),
-                const SizedBox(width: 16),
-                ElevatedButton(
-                  onPressed: (res != null && _running)
-                      ? () => _saveMeasurement(res!, appState)
-                      : null,
-                  child: Text(loc.translate('save')),
-                ),
-              ],
             ),
           ],
         ),
@@ -171,29 +205,46 @@ class _TunerPageState extends State<TunerPage> {
     );
   }
 
-  Widget _buildOvertones(List<double> overtones) {
+  Widget _buildOvertonesPanel(List<double> overtones) {
     final loc = AppLocalizations.of(context);
-    if (overtones.isEmpty) {
-      return Container();
-    }
-    return Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(loc.translate('overtones'),
-              style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
-          Expanded(
-            child: ListView.builder(
-              itemCount: overtones.length,
-              itemBuilder: (context, index) {
-                final freq = overtones[index];
-                return Text('${index + 1}: ${freq.toStringAsFixed(2)} Hz');
-              },
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          loc.translate('overtones'),
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: 12),
+        Expanded(
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.deepPurple.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(12),
             ),
+            padding: const EdgeInsets.all(12),
+            child: overtones.isEmpty
+                ? Center(
+                    child: Text(
+                      '—',
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
+                  )
+                : ListView.builder(
+                    itemCount: overtones.length,
+                    itemBuilder: (context, index) {
+                      final freq = overtones[index];
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4.0),
+                        child: Text(
+                          '${index + 1}. ${freq.toStringAsFixed(2)} Hz',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                      );
+                    },
+                  ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
