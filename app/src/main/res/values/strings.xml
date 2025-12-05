@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">Singing Bowl Tuner</string>
+    <string name="mic_on">Микрофон включен</string>
+    <string name="mic_off">Микрофон выключен</string>
+    <string name="toggle_mic">Вкл/выкл микрофон</string>
+    <string name="current_frequency">Текущая частота</string>
+    <string name="nearest_note">Ближайшая нота</string>
+    <string name="cents">Отклонение, центы</string>
+    <string name="save_profile">Сохранить профиль чаши</string>
+    <string name="bowl_name_hint">Название чаши</string>
+    <string name="saved_bowls">Сохранённые чаши</string>
+    <string name="calibration">Калибровка A4</string>
+    <string name="input_level_low">Слишком низкий уровень сигнала</string>
+    <string name="input_noise">Сильный шум окружения</string>
+</resources>

@@ -1,0 +1,18 @@
+# Gradle
+.gradle/
+**/build/
+**/captures/
+**/.cxx/
+local.properties
+.idea/
+.DS_Store
+/.gradle/
+/build/
+
+# Android Studio
+*.iml
+*.hprof
+
+# Generated
+app/release/
+app/debug/
